@@ -12,8 +12,18 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 2 --> Photodetector Collector pin
 ******************************************************************************/
 #include <Servo.h>
+#include <NewPing.h>
+
+#define TRIGGER_PIN  12  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN     11  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
+#define RED_PIN  5  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define GREEN_PIN     6  // Arduino pin tied to echo pin on the ultrasonic sensor.
+
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 
 const float pi = 3.142;
+const float DistanceFromWall = 15;
 
 // the number of pulses on the encoder wheel
 float EnRes = 5;
@@ -56,6 +66,10 @@ void setup()
 {
    LeftServo.attach(leftServoPin);
    RightServo.attach(rightServoPin);
+
+   pinMode(RED_PIN, OUTPUT);
+   pinMode(GREEN_PIN, OUTPUT);
+   
    
    Serial.begin(9600);
    
@@ -71,29 +85,104 @@ void setup()
    Serial.print("rps");
    Serial.print("\t");
    Serial.println("radps");
+
+   delay(5000);
 }
 
 void loop() 
 {
+  delay(30);  // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
 
-  // Stop      
-  Drive(0,180,10000);					
-//
-//   for (int i = 0; i < 190; i+=10)
-//  {
-//    Serial.print(i);
-//     Drive(i,180-i,3000);    
+//  // 9v battery
+//  if(sonar.ping_cm() < DistanceFromWall)
+//  {        // if we are too close, turn away
+//    Drive(70,150,20);  
 //  }
+//  else
+//  {
+//    Drive(30,110,20);
+//  }
+
+//  if(sonar.ping_cm() < DistanceFromWall)
+//  {        // if we are too close, turn away
+//    Drive(70,140,20);  
+//  }
+//  else
+//  {
+//    Drive(40,110,20);
+//  }
+
+//// 9V also ok
+//  if(sonar.ping_cm() < DistanceFromWall)
+//  {        // if we are too close, turn away
+//    Drive(60,180,20); 
+//    digitalWrite(GREEN_PIN, LOW); 
+//    digitalWrite(RED_PIN, HIGH);
+//  }
+//  else
+//  {
+//    Drive(0,120,20);
+//    digitalWrite(RED_PIN, LOW); 
+//    digitalWrite(GREEN_PIN, HIGH);
+//  }
+
+//// 9V CORRECT DIRECTION FOR FRONT SENSOR
+//  if(sonar.ping_cm() < DistanceFromWall)
+//  {        // if we are too close, turn away
+//    Drive(110,30,10);
+//    
+//    digitalWrite(GREEN_PIN, LOW); 
+//    digitalWrite(RED_PIN, HIGH);
+//  }
+//  else
+//  {
+//    Drive(150,70,10);  
+//    digitalWrite(RED_PIN, LOW); 
+//    digitalWrite(GREEN_PIN, HIGH);
+//  }
+
+
+//#define RED_PIN  5  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+//#define GREEN_PIN     6  // Arduino pin tied to echo pin on the ultrasonic sensor.
+
+  if((sonar.ping_cm() < DistanceFromWall)&& (sonar.ping_cm() > 0))
+  {        // if we are too close, turn away
+    digitalWrite(GREEN_PIN, LOW); 
+    digitalWrite(RED_PIN, HIGH);
+    Drive(110,40,10);
+    
+    
+  }
+  else
+  {
+    digitalWrite(RED_PIN, LOW); 
+    digitalWrite(GREEN_PIN, HIGH);
+    Drive(140,70,10);  
+    
+  }
+     
+//  Serial.print(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
+//  Serial.print("\t");
+//  Serial.print(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
+//  Serial.print("\t");
+//  Serial.print(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
+//  Serial.print("\t");
+  				
+
 			
 }
 
 void Drive(int leftServoSpeed, int rightServoSpeed, long DrivePeriod) 
   {
   DriveStartTime = millis() ; 
-//  Serial.println(millis());	
-//  Serial.println(DriveStartTime);	
-//  Serial.println(DrivePeriod);	
-//  Serial.println("-1");				        
+  
+//  Serial.print(leftServoSpeed); // Send ping, get distance in cm and print result (0 = outside set distance range)
+//  Serial.print("\t");
+//  Serial.print(rightServoSpeed); // Send ping, get distance in cm and print result (0 = outside set distance range)
+//  Serial.print("\t");
+  Serial.println(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
+  //Serial.print("\t");			
+          
   while ((millis() - DriveStartTime) < DrivePeriod)	        
   {
     if (leftServoSpeed < 0) {leftServoSpeed = 0;}     
@@ -106,15 +195,13 @@ void Drive(int leftServoSpeed, int rightServoSpeed, long DrivePeriod)
     LeftServo.write(leftServoSpeed);
     RightServo.write(rightServoSpeed);
     
-    tachometer(leftServoSpeed, DrivePeriod);
+    //tachometer(leftServoSpeed, DrivePeriod);
     }
   }
 
 void rps_fun()
- {
-   
-   
-   
+ { 
+  
   elapsedTime = millis() - previousTime;
   if (elapsedTime < minElapsed )  //false interrupt
   {
@@ -128,10 +215,8 @@ void rps_fun()
   if (elapsedTime > maxElapsed )  //timeout
   {
     previousTime = millis();
-    //timeout = 1;
   }  
    
-   //count +=1;      
  }
  
  void tachometer(int PWM_val, long OpPeriod)
@@ -141,45 +226,38 @@ void rps_fun()
   
    // time for maximum number of tachometer readings without exceeding Drive period 
    TachoPeriod = long((OpPeriod/TachoIncrement)*TachoIncrement); 
-   
-   // reset the counter and timer in case the speed has changed since the last count
-   timeold = millis();
-   count = 0; 
-   //Serial.print("1");
+
    TachoStartTime = millis() ; 				// record the operation start time
+
+   timeold = millis();
+   
+   count = 0; 
 
    while ((millis() - TachoStartTime) < TachoPeriod)    // while time elapsed < desired period  
   {
-      // the delay determines the total recording time
-      delay(TachoIncrement);    
-      //Serial.print("2");
-      // don't process interrupts during calculations
-      detachInterrupt(0);  
-    
-      // calculate the rotational speed  
-      time = millis();
-      timer = float(time - timeold);
-      rps = 1000*count/(EnRes * timer); 
-      radps = 2*pi*1000*count/(EnRes * timer); 
-      //Serial.print(count);
-      //Serial.print("\t");
-      //Serial.print("3");
-      // reset the counter and timer to begin the next increment
-      timeold = millis();   
-      count = 0;   
-      
-      // print everything
+    if ((millis() - timeold) > TachoIncrement)
+      {
+         detachInterrupt(0);   
+        // calculate the rotational speed  
+        time = millis();
+        timer = float(time - timeold);
+        rps = 1000*count/(EnRes * timer); 
+        radps = 2*pi*1000*count/(EnRes * timer); 
+        // reset the counter and timer to begin the next increment
+        timeold = millis();   
+        count = 0; 
+        //Restart the interrupt processing
+        previousTime = millis();
+        attachInterrupt(0, rps_fun, FALLING);
+      }
+                 
+      //delay(50);  // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.    
+      Serial.print(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
+      Serial.print("\t");
       Serial.print(PWM_val);
       Serial.print("\t");
       Serial.print(rps);
       Serial.print("\t");
-      Serial.println(radps);
-      
-      //Restart the interrupt processing
-      previousTime = millis();
-      attachInterrupt(0, rps_fun, FALLING);
-      
-    
+      Serial.println(radps);  
     }    
   }
-
