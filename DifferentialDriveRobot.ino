@@ -14,16 +14,20 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 #include <Servo.h>
 #include <NewPing.h>
 
-#define TRIGGER_PIN  12  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-#define ECHO_PIN     11  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define TRIGGER_PIN_SIDE  12  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN_SIDE     11  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define TRIGGER_PIN_FRONT  10  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN_FRONT     9  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
 #define RED_PIN  5  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define GREEN_PIN     6  // Arduino pin tied to echo pin on the ultrasonic sensor.
 
-NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+NewPing side_sonar(TRIGGER_PIN_SIDE, ECHO_PIN_SIDE, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 
 const float pi = 3.142;
 const float DistanceFromWall = 15;
+const float DistanceFromObstacle = 15;
 
 // the number of pulses on the encoder wheel
 float EnRes = 5;
@@ -142,24 +146,36 @@ void loop()
 //  }
 
 
-//#define RED_PIN  5  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-//#define GREEN_PIN     6  // Arduino pin tied to echo pin on the ultrasonic sensor.
-
-  if((sonar.ping_cm() < DistanceFromWall)&& (sonar.ping_cm() > 0))
+  // if we are at a corner or away from the wall but heading for an obstacle, turn left
+  if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
   {        // if we are too close, turn away
-    digitalWrite(GREEN_PIN, LOW); 
+    //Drive(70,70,50);
+    Drive(0,0,100);
+    
+    digitalWrite(GREEN_PIN, HIGH); 
     digitalWrite(RED_PIN, HIGH);
+  }  
+
+  // if we are too close, turn away
+  //else if(side_sonar.ping_cm() < DistanceFromWall)
+  else if((side_sonar.ping_cm() < DistanceFromWall)&& (side_sonar.ping_cm() > 0))
+  {        
     Drive(110,40,10);
     
-    
+    digitalWrite(GREEN_PIN, LOW); 
+    digitalWrite(RED_PIN, HIGH);
   }
+
+  // if we are too far, turn in to the wall
   else
   {
+    Drive(140,70,10);  
     digitalWrite(RED_PIN, LOW); 
     digitalWrite(GREEN_PIN, HIGH);
-    Drive(140,70,10);  
-    
   }
+  Serial.print(side_sonar.ping_cm());
+  Serial.print('\t');
+  Serial.println(front_sonar.ping_cm());
      
 //  Serial.print(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
 //  Serial.print("\t");
@@ -180,7 +196,7 @@ void Drive(int leftServoSpeed, int rightServoSpeed, long DrivePeriod)
 //  Serial.print("\t");
 //  Serial.print(rightServoSpeed); // Send ping, get distance in cm and print result (0 = outside set distance range)
 //  Serial.print("\t");
-  Serial.println(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
+//  Serial.println(side_sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
   //Serial.print("\t");			
           
   while ((millis() - DriveStartTime) < DrivePeriod)	        
@@ -252,7 +268,7 @@ void rps_fun()
       }
                  
       //delay(50);  // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.    
-      Serial.print(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
+      Serial.print(side_sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
       Serial.print("\t");
       Serial.print(PWM_val);
       Serial.print("\t");
