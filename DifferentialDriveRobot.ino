@@ -22,14 +22,14 @@ float radps[2] = {0,0};
 
 #define TRIGGER_PIN_SIDE  13  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define ECHO_PIN_SIDE     12  // Arduino pin tied to echo pin on the ultrasonic sensor.
-//#define TRIGGER_PIN_FRONT  4  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-//#define ECHO_PIN_FRONT     3  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define TRIGGER_PIN_FRONT  8  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN_FRONT     4  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
 //#define RED_PIN  5  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 //#define GREEN_PIN     6  // Arduino pin tied to echo pin on the ultrasonic sensor.
 
 NewPing side_sonar(TRIGGER_PIN_SIDE, ECHO_PIN_SIDE, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
-//NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 
 const float pi = 3.142;
 const float DistanceFromWall = 15;
@@ -78,23 +78,29 @@ void setup()
 
 void loop() 
 {
-
+followWall();
 //  Drive(200, -200, 2000);
 
- for (int i = 0; i < 255; i = i + 10)  
-  {
-    Drive(i, i, 2000); 
-  }
-  // decelerate from maximum speed to zero
-  for (int i = 255; i >= 0; i = i - 10)
-  {
-    Drive(i, i, 2000); 
+// for (int i = 0; i < 255; i = i + 10)  
+//  {
+//    Drive(i, i, 2000); 
+//    
+////        Serial.print(side_sonar.ping_cm());
+////        Serial.print('\t');
+////        Serial.print(front_sonar.ping_cm()); 
+////        Serial.println('\t'); 
+//  }
+//  // decelerate from maximum speed to zero
+//  for (int i = 255; i >= 0; i = i - 10)
+//  {
+//    Drive(i, i, 2000); 
+    
+//        Serial.print(side_sonar.ping_cm());
+//        Serial.print('\t');
+//        Serial.print(front_sonar.ping_cm());  
+//        Serial.println('\t');
   }  
 
-
-  
-   
- }
 
   void LwheelSpeed()
 {
@@ -108,7 +114,11 @@ void RwheelSpeed()
 }
 
 void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod) 
+
   {  
+
+
+    
      // set motor direction
     if(leftMotorSpeed < 0) 
     {
@@ -144,6 +154,13 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
       analogWrite(enA, leftMotorSpeed);
       analogWrite(enB, rightMotorSpeed); 
       tachometer(leftMotorSpeed, rightMotorSpeed);  
+      //sonar();
+
+//        Serial.print(side_sonar.ping_cm());
+//        Serial.print('\t');
+//        Serial.print(front_sonar.ping_cm());  
+//        Serial.println('\t');
+      
      }
 
     }
@@ -178,10 +195,51 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
         Serial.print("\t");
 //      Serial.println(rps[RIGHT]);
         Serial.println(radps[RIGHT]);
+
+//        Serial.print('\t');
+//        Serial.print(side_sonar.ping_cm());
+//        Serial.print('\t');
+//        Serial.println(front_sonar.ping_cm());      
         
         coder[LEFT] = 0;                 //clear the data buffer
         coder[RIGHT] = 0;       
         
         timer = millis();
     }    
+  }
+
+  void followWall()
+  {
+//    Serial.print(side_sonar.ping_cm());
+//    Serial.print('\t');
+//    Serial.print(front_sonar.ping_cm());  
+//    Serial.println('\t');
+
+  // if we are at a corner or away from the wall but heading for an obstacle, turn left
+
+  
+  if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
+  {        
+   
+    Drive(0,255,100);
+    Serial.println("front");
+  }  
+
+  // if we are too close, turn away
+  
+  else if((side_sonar.ping_cm() < DistanceFromWall)&& (side_sonar.ping_cm() > 0))
+  {    
+        
+    Drive(255,0,10);  
+    Serial.println("side");  
+  }
+
+  // if we are too far, turn in to the wall
+  
+  else
+  {
+    Drive(0,0,10);  
+    Serial.println("stop"); 
+  }
+    
   }
