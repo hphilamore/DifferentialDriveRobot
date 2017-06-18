@@ -84,89 +84,31 @@ void setup()
    count = 0;
    timeold = 0;
    
-   Serial.print("PWM");
+   Serial.print("side");
    Serial.print("\t");
-   Serial.print("rps");
-   Serial.print("\t");
-   Serial.println("radps");
+   Serial.println("front");
 
-   delay(5000);
+   delay(1000);
 }
 
 void loop() 
 {
   delay(30);  // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
 
-//  // 9v battery
-//  if(sonar.ping_cm() < DistanceFromWall)
-//  {        // if we are too close, turn away
-//    Drive(70,150,20);  
-//  }
-//  else
-//  {
-//    Drive(30,110,20);
-//  }
-
-//  if(sonar.ping_cm() < DistanceFromWall)
-//  {        // if we are too close, turn away
-//    Drive(70,140,20);  
-//  }
-//  else
-//  {
-//    Drive(40,110,20);
-//  }
-
-//// 9V also ok
-//  if(sonar.ping_cm() < DistanceFromWall)
-//  {        // if we are too close, turn away
-//    Drive(60,180,20); 
-//    digitalWrite(GREEN_PIN, LOW); 
-//    digitalWrite(RED_PIN, HIGH);
-//  }
-//  else
-//  {
-//    Drive(0,120,20);
-//    digitalWrite(RED_PIN, LOW); 
-//    digitalWrite(GREEN_PIN, HIGH);
-//  }
-
-//// 9V CORRECT DIRECTION FOR FRONT SENSOR
-//  if(sonar.ping_cm() < DistanceFromWall)
-//  {        // if we are too close, turn away
-//    Drive(110,30,10);
-//    
-//    digitalWrite(GREEN_PIN, LOW); 
-//    digitalWrite(RED_PIN, HIGH);
-//  }
-//  else
-//  {
-//    Drive(150,70,10);  
-//    digitalWrite(RED_PIN, LOW); 
-//    digitalWrite(GREEN_PIN, HIGH);
-//  }
-
-
-  // if we are at a corner or away from the wall but heading for an obstacle, turn left
   if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
-  {        // if we are too close, turn away
-    //Drive(70,70,50);
-    Drive(0,0,100);
-    
+  {        
+    Drive(0,0,100);    
     digitalWrite(GREEN_PIN, HIGH); 
     digitalWrite(RED_PIN, HIGH);
   }  
 
-  // if we are too close, turn away
-  //else if(side_sonar.ping_cm() < DistanceFromWall)
   else if((side_sonar.ping_cm() < DistanceFromWall)&& (side_sonar.ping_cm() > 0))
   {        
-    Drive(110,40,10);
-    
+    Drive(110,40,10);    
     digitalWrite(GREEN_PIN, LOW); 
     digitalWrite(RED_PIN, HIGH);
   }
 
-  // if we are too far, turn in to the wall
   else
   {
     Drive(140,70,10);  
@@ -175,29 +117,13 @@ void loop()
   }
   Serial.print(side_sonar.ping_cm());
   Serial.print('\t');
-  Serial.println(front_sonar.ping_cm());
-     
-//  Serial.print(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
-//  Serial.print("\t");
-//  Serial.print(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
-//  Serial.print("\t");
-//  Serial.print(sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
-//  Serial.print("\t");
-  				
-
-			
+  Serial.println(front_sonar.ping_cm());			
 }
 
 void Drive(int leftServoSpeed, int rightServoSpeed, long DrivePeriod) 
   {
   DriveStartTime = millis() ; 
-  
-//  Serial.print(leftServoSpeed); // Send ping, get distance in cm and print result (0 = outside set distance range)
-//  Serial.print("\t");
-//  Serial.print(rightServoSpeed); // Send ping, get distance in cm and print result (0 = outside set distance range)
-//  Serial.print("\t");
-//  Serial.println(side_sonar.ping_cm()); // Send ping, get distance in cm and print result (0 = outside set distance range)
-  //Serial.print("\t");			
+	
           
   while ((millis() - DriveStartTime) < DrivePeriod)	        
   {
