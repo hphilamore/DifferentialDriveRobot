@@ -16,8 +16,8 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 #define LEFT 0
 #define RIGHT 1
 
-long coder[2] = {0,0};
-long rps[2] = {0,0};
+float coder[2] = {0,0};
+float rps[2] = {0,0};
 float radps[2] = {0,0};
 
 #define TRIGGER_PIN_SIDE  13  // Arduino pin tied to trigger pin on the ultrasonic sensor.
@@ -54,8 +54,9 @@ int TachoIncrement = 500;
 //// sets the period an operation lasts for in mS
 long DrivePeriod;
 unsigned long DriveStartTime;
-unsigned long Time;
-unsigned long timer;
+//unsigned long Time;
+//unsigned long timer;
+unsigned long timer = 0;                //print manager timer
 float T;    
 
 void setup()
@@ -64,8 +65,8 @@ void setup()
    Serial.begin(9600);
    
   //Interrupt 0 is digital pin 2,Interrupt 1 is digital pin 3. 
-  attachInterrupt(0, LwheelSpeed, FALLING);    //init the interrupt mode for the digital pin 2
-  attachInterrupt(1, RwheelSpeed, FALLING);   //init the interrupt mode for the digital pin 3
+  attachInterrupt(LEFT, LwheelSpeed, FALLING);    //init the interrupt mode for the digital pin 2
+  attachInterrupt(RIGHT, RwheelSpeed, FALLING);   //init the interrupt mode for the digital pin 3
    
     pinMode(enA, OUTPUT);
     pinMode(in1, OUTPUT);
@@ -157,8 +158,10 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 //        Serial.print("\t");
 //        Serial.println(coder[RIGHT]);
 
-        Time = millis();
-        T = float(Time - timer);
+//        Time = millis();
+//        T = float(Time - timer);
+
+        T = float(millis() - timer);
  
 //      rps[LEFT] = 1000*float(coder[LEFT])/(EnRes * T); 
 //      rps[RIGHT] = 1000*float(coder[RIGHT])/(EnRes * T); 
