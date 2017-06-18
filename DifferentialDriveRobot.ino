@@ -88,21 +88,21 @@ void setup()
    Serial.print("\t");
    Serial.println("front");
 
-   delay(1000);
+   delay(5000);
 }
 
 void loop() 
 {
   delay(30);  // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
 
-  if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
-  {        
-    Drive(0,0,100);    
-    digitalWrite(GREEN_PIN, HIGH); 
-    digitalWrite(RED_PIN, HIGH);
-  }  
+//  if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
+//  {        
+//    Drive(0,0,100);    
+//    digitalWrite(GREEN_PIN, HIGH); 
+//    digitalWrite(RED_PIN, HIGH);
+//  }  
 
-  else if((side_sonar.ping_cm() < DistanceFromWall)&& (side_sonar.ping_cm() > 0))
+  if((side_sonar.ping_cm() < DistanceFromWall)&& (side_sonar.ping_cm() > 0))
   {        
     Drive(110,40,10);    
     digitalWrite(GREEN_PIN, LOW); 
