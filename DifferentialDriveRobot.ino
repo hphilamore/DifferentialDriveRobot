@@ -33,7 +33,20 @@ NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing
 
 const float pi = 3.142;
 const float DistanceFromWall = 15;
-const float DistanceFromObstacle = 15;
+const float DistanceFromObstacle = 17;
+
+//const float VeryClose = 14;
+//const float Close = 18;
+//const float Far = 22;
+//const float VeryFar = 26;
+const float VeryClose = 14;
+const float Close = 20;
+const float Far = 26;
+const float VeryFar = 32;
+//const float VeryClose = 18;
+//const float Close = 24;
+//const float Far = 30;
+//const float VeryFar = 36;
 
 // the number of pulses on the encoder wheel
 float EnRes = 10;
@@ -214,56 +227,51 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 
   void followWall()
   {
-//    Serial.print(side_sonar.ping_cm());
-//    Serial.print('\t');
-//    Serial.print(front_sonar.ping_cm());  
-//    Serial.println('\t');
 
   delay(50);
 
-  // if we are at a corner or away from the wall but heading for an obstacle, turn left
-
-  
   if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
   {        
-   
     //Drive(0,255,100);
-    Drive(-100,100,200);   
-    Serial.print("front");
-     Serial.print("\t"); 
-    Serial.println(front_sonar.ping_cm()); 
+    Drive(-100,100,300);   
     digitalWrite(GREEN_PIN, HIGH); 
     digitalWrite(RED_PIN, HIGH); 
   }  
 
-  //if ((side_sonar.ping_cm() < DistanceFromWall)&& (side_sonar.ping_cm() > 0))
-  
-  else if((side_sonar.ping_cm() < DistanceFromWall)&& (side_sonar.ping_cm() > 0))
+  else if((side_sonar.ping_cm() < VeryClose)&& (side_sonar.ping_cm() > 0))
   {    
-    Drive(90,110,10);     
-    //Drive(255,0,10); 
-    Serial.print("close");  
-    Serial.print("\t"); 
-    Serial.println(side_sonar.ping_cm()); 
-    digitalWrite(GREEN_PIN, LOW); 
-    digitalWrite(RED_PIN, HIGH); 
-//     analogWrite(GREEN_PIN, 0); 
-//    analogWrite(RED_PIN, 255);  
+    Drive(60,120,10);     
+    analogWrite(GREEN_PIN, 0); 
+    analogWrite(RED_PIN, 255);  
+  }
+  
+ else if((side_sonar.ping_cm() < Close)&& (side_sonar.ping_cm() > VeryClose))
+  {    
+    Drive(80,100,10);     
+    analogWrite(GREEN_PIN, 0); 
+    analogWrite(RED_PIN, 50);  
+  }
+  
+ else if((side_sonar.ping_cm() < Far)&& (side_sonar.ping_cm() > Close))
+  {    
+    Drive(90,90,10);     
+    analogWrite(GREEN_PIN, 0); 
+    analogWrite(RED_PIN, 0);  
+  }
+  
+ else if((side_sonar.ping_cm() < VeryFar)&& (side_sonar.ping_cm() > Far))
+  {    
+    Drive(100,80,10);     
+    analogWrite(RED_PIN, 0); 
+    analogWrite(GREEN_PIN, 50);  
   }
 
-  // if we are too far, turn in to the wall
   
-  else
-  {
-    Drive(130, 90, 10);
-    //Drive(0,255,10);  
-    Serial.print("far");  
-    Serial.print("\t"); 
-    Serial.println(side_sonar.ping_cm()); 
-//    analogWrite(RED_PIN, 0); 
-//    analogWrite(GREEN_PIN, 255);  
-    digitalWrite(RED_PIN, LOW); 
-    digitalWrite(GREEN_PIN, HIGH);  
+  else //if(side_sonar.ping_cm() > VeryFar)
+  {    
+    Drive(120,60,10);     
+    analogWrite(RED_PIN, 0); 
+    analogWrite(GREEN_PIN, 255);  
   }
     
   }
