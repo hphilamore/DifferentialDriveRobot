@@ -20,13 +20,13 @@ float coder[2] = {0,0};
 float rps[2] = {0,0};
 float radps[2] = {0,0};
 
-#define TRIGGER_PIN_SIDE  13  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define TRIGGER_PIN_SIDE  12//3  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define ECHO_PIN_SIDE     12  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define TRIGGER_PIN_FRONT  8  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-#define ECHO_PIN_FRONT     4  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define ECHO_PIN_FRONT     8//4  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
-//#define RED_PIN  5  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-//#define GREEN_PIN     6  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define RED_PIN  A0  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define GREEN_PIN  A1  // Arduino pin tied to echo pin on the ultrasonic sensor.
 
 NewPing side_sonar(TRIGGER_PIN_SIDE, ECHO_PIN_SIDE, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
@@ -74,6 +74,9 @@ void setup()
     pinMode(enB, OUTPUT);
     pinMode(in3, OUTPUT);
     pinMode(in4, OUTPUT);
+    
+    pinMode(RED_PIN, OUTPUT);
+    pinMode(GREEN_PIN, OUTPUT);
 }
 
 void loop() 
@@ -125,6 +128,7 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
       digitalWrite(in1, HIGH);
       digitalWrite(in2, LOW);
       leftMotorSpeed = abs(leftMotorSpeed);
+
     }
     
     else
@@ -215,31 +219,51 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 //    Serial.print(front_sonar.ping_cm());  
 //    Serial.println('\t');
 
+  delay(50);
+
   // if we are at a corner or away from the wall but heading for an obstacle, turn left
 
   
   if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
   {        
    
-    Drive(0,255,100);
-    Serial.println("front");
+    //Drive(0,255,100);
+    Drive(-100,100,200);   
+    Serial.print("front");
+     Serial.print("\t"); 
+    Serial.println(front_sonar.ping_cm()); 
+    digitalWrite(GREEN_PIN, HIGH); 
+    digitalWrite(RED_PIN, HIGH); 
   }  
 
-  // if we are too close, turn away
+  //if ((side_sonar.ping_cm() < DistanceFromWall)&& (side_sonar.ping_cm() > 0))
   
   else if((side_sonar.ping_cm() < DistanceFromWall)&& (side_sonar.ping_cm() > 0))
   {    
-        
-    Drive(255,0,10);  
-    Serial.println("side");  
+    Drive(90,110,10);     
+    //Drive(255,0,10); 
+    Serial.print("close");  
+    Serial.print("\t"); 
+    Serial.println(side_sonar.ping_cm()); 
+    digitalWrite(GREEN_PIN, LOW); 
+    digitalWrite(RED_PIN, HIGH); 
+//     analogWrite(GREEN_PIN, 0); 
+//    analogWrite(RED_PIN, 255);  
   }
 
   // if we are too far, turn in to the wall
   
   else
   {
-    Drive(0,0,10);  
-    Serial.println("stop"); 
+    Drive(130, 90, 10);
+    //Drive(0,255,10);  
+    Serial.print("far");  
+    Serial.print("\t"); 
+    Serial.println(side_sonar.ping_cm()); 
+//    analogWrite(RED_PIN, 0); 
+//    analogWrite(GREEN_PIN, 255);  
+    digitalWrite(RED_PIN, LOW); 
+    digitalWrite(GREEN_PIN, HIGH);  
   }
     
   }
