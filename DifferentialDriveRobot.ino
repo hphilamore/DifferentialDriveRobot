@@ -100,7 +100,8 @@ void setup()
     
     //Input = map(side_sonar.ping_cm(), 14, 32, 100, 255); //Change read scale to analog out scale 
 //    Setpoint = map(35, 14, 132, 100, 255); 
-    Setpoint = map(100, 14, 132, 100, 255); 
+    Setpoint = map(35, 14, 50, 100, 255); 
+    Setpoint = map(35, 2, 50, 100, 255); 
     myPID.SetMode(AUTOMATIC); //Turn on the PID loop 
     myPID.SetSampleTime(sampleRate); //Sets the sample rate
     myPID.SetOutputLimits(100, 255);
@@ -118,18 +119,38 @@ void loop()
 //followWall();
 //PID();
 //Setpoint = map(analogRead(pot), 0, 1024, 0, 255); //Read our setpoint
-//lightLevel = analogRead(photores); //Get the light level 
-Distance = (side_sonar.ping_cm() < 1) ? 132 : side_sonar.ping_cm();
+//lightLevel = analogRead(photores); //Get the light level
+int D = side_sonar.ping_cm(); 
+Distance = (D < 1) ? 132 : D;
+//Serial.println(Distance);
 //Input = map(Distance, 14, 132, 100, 255); //Change read scale to analog out scale 
 //Input = map(Distance, 25, 132, 100, 255); //Change read scale to analog out scale 
+
+
 Input = map(Distance, 14, 132, 100, 255); //Change read scale to analog out scale 
+Input = map(Distance, 14, 50, 100, 255); //Change read scale to analog out scale 
+Input = map(Distance, 14, 50, 40, 100); //Change read scale to analog out scale 
 myPID.Compute(); //Run the PID loop 
 analogWrite(enA, Output); //Write out the output from the PID loop to our LED pin 
 now = millis(); //Keep track of time 
-if(now - lastMessage > serialPing)  //If it has been long enough give us some info on serial
-  {
+//if(now - lastMessage > serialPing)  //If it has been long enough give us some info on serial
+ // {
     // this should execute less frequently 
     // send a message back to the mother ship 
+//  if (int(side_sonar.ping_cm()) < 1)
+//  {
+//    Serial.println("out of range");
+//    Distance = 132; 
+//  }
+//  else
+//  {
+//    Distance = side_sonar.ping_cm();
+//  }
+
+  //      // If (C1 == 2), C2 = 0. Otherwise C2 = C1 + 1  
+      //Distance = (int(side_sonar.ping_cm()) < 1) ? 132 : side_sonar.ping_cm();
+
+    
     Serial.print("Sensor = "); 
     Serial.print(Distance); 
     Serial.print(" Input = "); 
@@ -176,7 +197,7 @@ if(now - lastMessage > serialPing)  //If it has been long enough give us some in
 //     } 
 
      lastMessage = now; //update the time stamp.
-  }
+//  }
 } 
 
 
