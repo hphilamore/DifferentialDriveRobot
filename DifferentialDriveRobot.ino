@@ -79,6 +79,12 @@ unsigned long DriveStartTime;
 unsigned long timer = 0;               
 float T;    
 
+int setPoint = 35;
+int minDistance = 2;
+int maxDistance = 50;
+int minSpeed = 100;
+int maxSpeed = 255;
+
 void setup()
 {
    
@@ -98,13 +104,10 @@ void setup()
     pinMode(RED_PIN, OUTPUT);
     pinMode(GREEN_PIN, OUTPUT);
     
-    //Input = map(side_sonar.ping_cm(), 14, 32, 100, 255); //Change read scale to analog out scale 
-//    Setpoint = map(35, 14, 132, 100, 255); 
-    Setpoint = map(35, 14, 50, 100, 255); 
-    Setpoint = map(35, 2, 50, 100, 255); 
+    Setpoint = map(setPoint, minDistance, maxDistance, minSpeed, maxSpeed);
     myPID.SetMode(AUTOMATIC); //Turn on the PID loop 
     myPID.SetSampleTime(sampleRate); //Sets the sample rate
-    myPID.SetOutputLimits(100, 255);
+    myPID.SetOutputLimits(minSpeed, maxSpeed);
 
     Serial.print("Setpoint = "); 
     Serial.print(Setpoint);
@@ -130,6 +133,7 @@ Distance = (D < 1) ? 132 : D;
 Input = map(Distance, 14, 132, 100, 255); //Change read scale to analog out scale 
 Input = map(Distance, 14, 50, 100, 255); //Change read scale to analog out scale 
 Input = map(Distance, 14, 50, 40, 100); //Change read scale to analog out scale 
+Input = map(Distance, minDistance, maxDistance, minSpeed, maxSpeed); //Change read scale to analog out scale 
 myPID.Compute(); //Run the PID loop 
 analogWrite(enA, Output); //Write out the output from the PID loop to our LED pin 
 now = millis(); //Keep track of time 
