@@ -12,13 +12,10 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 2 --> Photodetector Collector pin
 ******************************************************************************/
 #include <NewPing.h>
+#include <PID_v1.h>
 
 #define LEFT 0
 #define RIGHT 1
-
-float coder[2] = {0,0};
-float rps[2] = {0,0};
-float radps[2] = {0,0};
 
 #define TRIGGER_PIN_SIDE  12//3  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define ECHO_PIN_SIDE     12  // Arduino pin tied to echo pin on the ultrasonic sensor.
@@ -28,25 +25,37 @@ float radps[2] = {0,0};
 #define RED_PIN  A0  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define GREEN_PIN  A1  // Arduino pin tied to echo pin on the ultrasonic sensor.
 
-NewPing side_sonar(TRIGGER_PIN_SIDE, ECHO_PIN_SIDE, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
-NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+// encoder variables
+float coder[2] = {0,0};
+float rps[2] = {0,0};
+float radps[2] = {0,0};
 
 const float pi = 3.142;
 const float DistanceFromWall = 15;
 const float DistanceFromObstacle = 17;
 
-//const float VeryClose = 14;
-//const float Close = 18;
-//const float Far = 22;
-//const float VeryFar = 26;
+// bang-bang control parameters
 const float VeryClose = 14;
 const float Close = 20;
 const float Far = 26;
 const float VeryFar = 32;
-//const float VeryClose = 18;
-//const float Close = 24;
-//const float Far = 30;
-//const float VeryFar = 36;
+
+// PID Tuning parameters
+float Kp=5; //Initial Proportional Gain 
+float Ki=0; //Initial Integral Gain 
+float Kd=0; //Initial Differential Gain
+
+double Setpoint, Input, Output;    
+
+NewPing side_sonar(TRIGGER_PIN_SIDE, ECHO_PIN_SIDE, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);    
+                                                            
+const int sampleRate = 1;       // Variable that determines how fast our PID loop runs
+const long serialPing = 500;    //This determines how often we ping our loop  
+long now = 0;                   //This variable is used to keep track of time 
+unsigned long lastMessage = 0;  //This keeps track of when our loop last spoke to serial // last message timestamp.
 
 // the number of pulses on the encoder wheel
 float EnRes = 10;
@@ -63,13 +72,9 @@ int in4 = 10;
 // the time (in mS) increment to record the encoder output for before outputting to serial 
 int TachoIncrement = 500;
 
-//// timer and counter variables
-//// sets the period an operation lasts for in mS
 long DrivePeriod;
 unsigned long DriveStartTime;
-//unsigned long Time;
-//unsigned long timer;
-unsigned long timer = 0;                //print manager timer
+unsigned long timer = 0;               
 float T;    
 
 void setup()
@@ -78,8 +83,8 @@ void setup()
    Serial.begin(9600);
    
   //Interrupt 0 is digital pin 2,Interrupt 1 is digital pin 3. 
-  attachInterrupt(LEFT, LwheelSpeed, FALLING);    //init the interrupt mode for the digital pin 2
-  attachInterrupt(RIGHT, RwheelSpeed, FALLING);   //init the interrupt mode for the digital pin 3
+    attachInterrupt(LEFT, LwheelSpeed, FALLING);    //init the interrupt mode for the digital pin 2
+    attachInterrupt(RIGHT, RwheelSpeed, FALLING);   //init the interrupt mode for the digital pin 3
    
     pinMode(enA, OUTPUT);
     pinMode(in1, OUTPUT);
@@ -90,32 +95,77 @@ void setup()
     
     pinMode(RED_PIN, OUTPUT);
     pinMode(GREEN_PIN, OUTPUT);
+    
+    //Input = map(side_sonar.ping_cm(), 14, 32, 100, 255); //Change read scale to analog out scale 
+    Setpoint = map(23, 14, 132, 100, 255); 
+    myPID.SetMode(AUTOMATIC); //Turn on the PID loop 
+    myPID.SetSampleTime(sampleRate); //Sets the sample rate
+    myPID.SetOutputLimits(100, 255);
+
+    lastMessage = millis(); // timestamp
+    
 }
 
 void loop() 
 {
-followWall();
-//  Drive(200, -200, 2000);
+//followWall();
+//PID();
+//Setpoint = map(analogRead(pot), 0, 1024, 0, 255); //Read our setpoint
+//lightLevel = analogRead(photores); //Get the light level 
+Input = map(side_sonar.ping_cm(), 14, 132, 100, 255); //Change read scale to analog out scale 
+myPID.Compute(); //Run the PID loop 
+analogWrite(enA, Output); //Write out the output from the PID loop to our LED pin 
+now = millis(); //Keep track of time 
+if(now - lastMessage > serialPing)  //If it has been long enough give us some info on serial
+  {
+    // this should execute less frequently 
+    // send a message back to the mother ship 
+    Serial.print("Setpoint = "); 
+    Serial.print(Setpoint); 
+    Serial.print(" Input = "); 
+    Serial.print(Input); 
+    Serial.print(" Output = "); 
+    Serial.print(Output); 
+    Serial.print("\n"); 
+//    if (Serial.available() > 0)
+//    {
+//        for (int x = 0; x < 4; x++)
+//        { 
+//            switch (x) 
+//          { 
+//            case 0: 
+//              Kp = Serial.parseFloat(); 
+//              break; 
+//            
+//            case 1: 
+//              Ki = Serial.parseFloat(); 
+//              break; 
+//            
+//            case 2: 
+//              Kd = Serial.parseFloat(); 
+//              break; 
+//            
+//            case 3: 
+//              for (int y = Serial.available(); y == 0; y--) 
+//              { 
+//                Serial.read(); //Clear out any residual junk 
+//              } 
+//              break;
+//          }
+//       }
+//
+//      Serial.print(" Kp,Ki,Kd = "); 
+//      Serial.print(Kp); 
+//      Serial.print(","); 
+//      Serial.print(Ki); 
+//      Serial.print(","); 
+//      Serial.println(Kd); //Let us know what we just received 
+//      myPID.SetTunings(Kp, Ki, Kd); //Set the PID gain constants and start running       
+//     } 
 
-// for (int i = 0; i < 255; i = i + 10)  
-//  {
-//    Drive(i, i, 2000); 
-//    
-////        Serial.print(side_sonar.ping_cm());
-////        Serial.print('\t');
-////        Serial.print(front_sonar.ping_cm()); 
-////        Serial.println('\t'); 
-//  }
-//  // decelerate from maximum speed to zero
-//  for (int i = 255; i >= 0; i = i - 10)
-//  {
-//    Drive(i, i, 2000); 
-    
-//        Serial.print(side_sonar.ping_cm());
-//        Serial.print('\t');
-//        Serial.print(front_sonar.ping_cm());  
-//        Serial.println('\t');
-  }  
+     lastMessage = now; //update the time stamp.
+  }
+} 
 
 
   void LwheelSpeed()
@@ -228,50 +278,51 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
   void followWall()
   {
 
-  delay(50);
-
-  if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
-  {        
-    //Drive(0,255,100);
-    Drive(-100,100,300);   
-    digitalWrite(GREEN_PIN, HIGH); 
-    digitalWrite(RED_PIN, HIGH); 
-  }  
-
-  else if((side_sonar.ping_cm() < VeryClose)&& (side_sonar.ping_cm() > 0))
-  {    
-    Drive(60,120,10);     
-    analogWrite(GREEN_PIN, 0); 
-    analogWrite(RED_PIN, 255);  
-  }
+    delay(50);
   
- else if((side_sonar.ping_cm() < Close)&& (side_sonar.ping_cm() > VeryClose))
-  {    
-    Drive(80,100,10);     
-    analogWrite(GREEN_PIN, 0); 
-    analogWrite(RED_PIN, 50);  
-  }
+    if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
+    {        
+      //Drive(0,255,100);
+      Drive(-100,100,300);   
+      digitalWrite(GREEN_PIN, HIGH); 
+      digitalWrite(RED_PIN, HIGH); 
+    }  
   
- else if((side_sonar.ping_cm() < Far)&& (side_sonar.ping_cm() > Close))
-  {    
-    Drive(90,90,10);     
-    analogWrite(GREEN_PIN, 0); 
-    analogWrite(RED_PIN, 0);  
-  }
+    else if((side_sonar.ping_cm() < VeryClose)&& (side_sonar.ping_cm() > 0))
+    {    
+      Drive(60,120,10);     
+      analogWrite(GREEN_PIN, 0); 
+      analogWrite(RED_PIN, 255);  
+    }
+    
+   else if((side_sonar.ping_cm() < Close)&& (side_sonar.ping_cm() > VeryClose))
+    {    
+      Drive(80,100,10);     
+      analogWrite(GREEN_PIN, 0); 
+      analogWrite(RED_PIN, 50);  
+    }
+    
+   else if((side_sonar.ping_cm() < Far)&& (side_sonar.ping_cm() > Close))
+    {    
+      Drive(90,90,10);     
+      analogWrite(GREEN_PIN, 0); 
+      analogWrite(RED_PIN, 0);  
+    }
+    
+   else if((side_sonar.ping_cm() < VeryFar)&& (side_sonar.ping_cm() > Far))
+    {    
+      Drive(100,80,10);     
+      analogWrite(RED_PIN, 0); 
+      analogWrite(GREEN_PIN, 50);  
+    }
   
- else if((side_sonar.ping_cm() < VeryFar)&& (side_sonar.ping_cm() > Far))
-  {    
-    Drive(100,80,10);     
-    analogWrite(RED_PIN, 0); 
-    analogWrite(GREEN_PIN, 50);  
-  }
-
-  
-  else //if(side_sonar.ping_cm() > VeryFar)
-  {    
-    Drive(120,60,10);     
-    analogWrite(RED_PIN, 0); 
-    analogWrite(GREEN_PIN, 255);  
-  }
+    
+    else //if(side_sonar.ping_cm() > VeryFar)
+    {    
+      Drive(120,60,10);     
+      analogWrite(RED_PIN, 0); 
+      analogWrite(GREEN_PIN, 255);  
+    }
     
   }
+
