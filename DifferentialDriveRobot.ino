@@ -192,17 +192,8 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 //      if(millis() - timer > 500)
       if(millis() - timer > TachoIncrement)
       {      
-//        Serial.print(coder[LEFT]);
-//        Serial.print("\t");
-//        Serial.println(coder[RIGHT]);
-
-//        Time = millis();
-//        T = float(Time - timer);
 
         T = float(millis() - timer);
- 
-//      rps[LEFT] = 1000*float(coder[LEFT])/(EnRes * T); 
-//      rps[RIGHT] = 1000*float(coder[RIGHT])/(EnRes * T); 
 
         radps[LEFT] = 2*pi*1000*float(coder[LEFT])/(EnRes * T); 
         radps[RIGHT] = 2*pi*1000*float(coder[RIGHT])/(EnRes * T);
@@ -215,12 +206,7 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 //        Serial.print(rightMotorSpeed);
 //        Serial.print("\t");
 ////      Serial.println(rps[RIGHT]);
-//        Serial.println(radps[RIGHT]);
-
-//        Serial.print('\t');
-//        Serial.print(side_sonar.ping_cm());
-//        Serial.print('\t');
-//        Serial.println(front_sonar.ping_cm());      
+//        Serial.println(radps[RIGHT]);     
         
         coder[LEFT] = 0;                 //clear the data buffer
         coder[RIGHT] = 0;       
@@ -232,6 +218,14 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 
   void FollowWallPID()
   {
+
+    if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
+    {        
+      //Drive(0,255,100);
+      Drive(-100,100,500);   
+      digitalWrite(GREEN_PIN, HIGH); 
+      digitalWrite(RED_PIN, HIGH); 
+    }  
 
     int D = side_sonar.ping_cm(); 
     Distance = (D < 1) ? 132 : D;
@@ -248,8 +242,7 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 //    int green = map(OutputRight, Setpoint, maxSpeed, 100, 255); 
     
     int green = map(OutputLeft, Setpoint, maxSpeed, 100, 255); 
-    int red = map(OutputRight, Setpoint, maxSpeed, 100, 255); 
-   
+    int red = map(OutputRight, Setpoint, maxSpeed, 100, 255);    
     analogWrite(RED_PIN, red); 
     analogWrite(GREEN_PIN, green);
 
@@ -273,10 +266,10 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
     Serial.print(Output); 
     Serial.print(" Output = "); 
     Serial.print(2 * Setpoint - Output); 
-      Serial.print(" red = ");
-         Serial.print(red);
-           Serial.print(" green = ");
- Serial.print(green);
+    Serial.print(" red = ");
+    Serial.print(red);
+    Serial.print(" green = ");
+    Serial.print(green);
     Serial.print("\n"); 
    
   }
