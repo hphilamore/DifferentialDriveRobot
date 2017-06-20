@@ -119,7 +119,7 @@ void loop()
 //PID();
 //Setpoint = map(analogRead(pot), 0, 1024, 0, 255); //Read our setpoint
 //lightLevel = analogRead(photores); //Get the light level 
-Distance = (side_sonar.ping_cm() == 0) ? 132 : side_sonar.ping_cm();
+Distance = (side_sonar.ping_cm() < 1) ? 132 : side_sonar.ping_cm();
 //Input = map(Distance, 14, 132, 100, 255); //Change read scale to analog out scale 
 //Input = map(Distance, 25, 132, 100, 255); //Change read scale to analog out scale 
 Input = map(Distance, 14, 132, 100, 255); //Change read scale to analog out scale 
