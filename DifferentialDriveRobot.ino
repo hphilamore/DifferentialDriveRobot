@@ -45,17 +45,26 @@ float Kp=5; //Initial Proportional Gain
 float Ki=0; //Initial Integral Gain 
 float Kd=0; //Initial Differential Gain
 
-double Setpoint, Input, Output;    
+double Setpoint, LeftInput, LeftOutput, RightInput, RightOutput;    
 
 NewPing side_sonar(TRIGGER_PIN_SIDE, ECHO_PIN_SIDE, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 
-PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);    
+PID leftPID(&LeftInput, &LeftOutput, &Setpoint, Kp, Ki, Kd, DIRECT); 
+PID rightPID(&RightInput, &RightOutput, &Setpoint, Kp, Ki, Kd, DIRECT);   
                                                             
 const int sampleRate = 1;       // Variable that determines how fast our PID loop runs
 const long serialPing = 500;    //This determines how often we ping our loop  
 long now = 0;                   //This variable is used to keep track of time 
 unsigned long lastMessage = 0;  //This keeps track of when our loop last spoke to serial // last message timestamp.
+
+int setDistance = 22;
+int range = 20;
+int distanceMin = setDistance - range;
+int distanceMax = setDistance + range;
+
+int WheelSpeedMax = 200;
+int WheelSpeedMin = 100;
 
 // the number of pulses on the encoder wheel
 float EnRes = 10;
@@ -97,10 +106,14 @@ void setup()
     pinMode(GREEN_PIN, OUTPUT);
     
     //Input = map(side_sonar.ping_cm(), 14, 32, 100, 255); //Change read scale to analog out scale 
-    Setpoint = map(23, 14, 132, 100, 255); 
-    myPID.SetMode(AUTOMATIC); //Turn on the PID loop 
-    myPID.SetSampleTime(sampleRate); //Sets the sample rate
-    myPID.SetOutputLimits(100, 255);
+    Setpoint = map(setDistance, distanceMin, distanceMax,  WheelSpeedMin, WheelSpeedMax);
+     
+    leftPID.SetMode(AUTOMATIC); //Turn on the PID loop 
+    leftPID.SetSampleTime(sampleRate); //Sets the sample rate
+    leftPID.SetOutputLimits(WheelSpeedMin, WheelSpeedMax);
+    rightPID.SetMode(AUTOMATIC); //Turn on the PID loop 
+    rightPID.SetSampleTime(sampleRate); //Sets the sample rate
+    rightPID.SetOutputLimits(WheelSpeedMin, WheelSpeedMax);
 
     lastMessage = millis(); // timestamp
     
@@ -182,13 +195,7 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
     {        
       analogWrite(enA, leftMotorSpeed);
       analogWrite(enB, rightMotorSpeed); 
-      tachometer(leftMotorSpeed, rightMotorSpeed);  
-      //sonar();
-
-//        Serial.print(side_sonar.ping_cm());
-//        Serial.print('\t');
-//        Serial.print(front_sonar.ping_cm());  
-//        Serial.println('\t');
+      tachometer(leftMotorSpeed, rightMotorSpeed); 
       
      }
 
@@ -197,7 +204,6 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
  
  void tachometer(float leftMotorSpeed, float rightMotorSpeed)
  {
-//      if(millis() - timer > 500)
       if(millis() - timer > TachoIncrement)
       {      
 //        Serial.print(coder[LEFT]);
@@ -214,21 +220,6 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 
         radps[LEFT] = 2*pi*1000*float(coder[LEFT])/(EnRes * T); 
         radps[RIGHT] = 2*pi*1000*float(coder[RIGHT])/(EnRes * T);
-
-        Serial.print(leftMotorSpeed);
-        Serial.print("\t");        
-//      Serial.print(rps[LEFT]);   
-        Serial.print(radps[LEFT]);         
-        Serial.print("\t");
-        Serial.print(rightMotorSpeed);
-        Serial.print("\t");
-//      Serial.println(rps[RIGHT]);
-        Serial.println(radps[RIGHT]);
-
-//        Serial.print('\t');
-//        Serial.print(side_sonar.ping_cm());
-//        Serial.print('\t');
-//        Serial.println(front_sonar.ping_cm());      
         
         coder[LEFT] = 0;                 //clear the data buffer
         coder[RIGHT] = 0;       
@@ -290,19 +281,34 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 
   void WallFollowerPID()
   {
-    Input = map(side_sonar.ping_cm(), 14, 132, 100, 255); //Change read scale to analog out scale 
-    myPID.Compute(); //Run the PID loop 
-    Drive(Output, Output, 100); 
+    LeftInput = map(side_sonar.ping_cm(), distanceMin, distanceMax, WheelSpeedMin, WheelSpeedMax); //Change read scale to analog out scale
+    RightInput = map(side_sonar.ping_cm(), distanceMax, distanceMin, WheelSpeedMax,  WheelSpeedMin); //Change read scale to analog out scale  
+    leftPID.Compute(); //Run the PID loop 
+    rightPID.Compute(); //Run the PID loop 
+    Drive(LeftOutput, RightOutput, 100); 
     now = millis(); //Keep track of time 
     
     if(now - lastMessage > serialPing)  //If it has been long enough give us some info on serial
       {
-        Serial.print("Setpoint = "); 
-        Serial.print(Setpoint); 
-        Serial.print(" Input = "); 
-        Serial.print(Input); 
-        Serial.print(" Output = "); 
-        Serial.print(Output); 
+//        Serial.print("Setpoint = "); 
+//        Serial.print(Setpoint); 
+//        Serial.print(" RightInput = "); 
+//        Serial.print(RightInput); 
+        Serial.print(" min"); 
+        Serial.print(distanceMin);
+        Serial.print(" max "); 
+        Serial.print( distanceMax);
+
+
+        Serial.print(" sensor = "); 
+        Serial.print(side_sonar.ping_cm());
+        Serial.print(" LeftInput = "); 
+        Serial.print(LeftInput);
+        Serial.print(" LeftOutput = "); 
+        Serial.print(LeftOutput); 
+//        Serial.print(" RightOutput = "); 
+//        Serial.print(RightOutput); 
+ 
         Serial.print("\n");
         lastMessage = now; //update the time stamp.
       }
