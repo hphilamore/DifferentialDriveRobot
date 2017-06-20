@@ -53,9 +53,9 @@ NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);    
                                                             
 const int sampleRate = 1;       // Variable that determines how fast our PID loop runs
-const long serialPing = 500;    //This determines how often we ping our loop  
-long now = 0;                   //This variable is used to keep track of time 
-unsigned long lastMessage = 0;  //This keeps track of when our loop last spoke to serial // last message timestamp.
+//const long serialPing = 500;    //This determines how often we ping our loop  
+//long now = 0;                   //This variable is used to keep track of time 
+//unsigned long lastMessage = 0;  //This keeps track of when our loop last spoke to serial // last message timestamp.
 
 // the number of pulses on the encoder wheel
 float EnRes = 10;
@@ -80,8 +80,16 @@ unsigned long timer = 0;
 float T;    
 
 int setPoint = 35;
-int minDistance = 2;
-int maxDistance = 50;
+
+int range = 15;
+
+//int minDistance = 2;
+//int maxDistance = 50;
+
+int maxDistance = setPoint + range;
+int minDistance = setPoint - range;
+
+
 int minSpeed = 100;
 int maxSpeed = 255;
 
@@ -109,99 +117,39 @@ void setup()
     myPID.SetSampleTime(sampleRate); //Sets the sample rate
     myPID.SetOutputLimits(minSpeed, maxSpeed);
 
+    Serial.print(minDistance);
+Serial.print("\t");
+Serial.println(maxDistance);
+
     Serial.print("Setpoint = "); 
     Serial.print(Setpoint);
     Serial.print("\n"); 
 
-    lastMessage = millis(); // timestamp
+   // lastMessage = millis(); // timestamp
     
 }
 
 void loop() 
 {
-//followWall();
-//PID();
-//Setpoint = map(analogRead(pot), 0, 1024, 0, 255); //Read our setpoint
-//lightLevel = analogRead(photores); //Get the light level
+
 int D = side_sonar.ping_cm(); 
 Distance = (D < 1) ? 132 : D;
-//Serial.println(Distance);
-//Input = map(Distance, 14, 132, 100, 255); //Change read scale to analog out scale 
-//Input = map(Distance, 25, 132, 100, 255); //Change read scale to analog out scale 
-
-
-Input = map(Distance, 14, 132, 100, 255); //Change read scale to analog out scale 
-Input = map(Distance, 14, 50, 100, 255); //Change read scale to analog out scale 
-Input = map(Distance, 14, 50, 40, 100); //Change read scale to analog out scale 
 Input = map(Distance, minDistance, maxDistance, minSpeed, maxSpeed); //Change read scale to analog out scale 
 myPID.Compute(); //Run the PID loop 
-analogWrite(enA, Output); //Write out the output from the PID loop to our LED pin 
-now = millis(); //Keep track of time 
-//if(now - lastMessage > serialPing)  //If it has been long enough give us some info on serial
- // {
-    // this should execute less frequently 
-    // send a message back to the mother ship 
-//  if (int(side_sonar.ping_cm()) < 1)
-//  {
-//    Serial.println("out of range");
-//    Distance = 132; 
-//  }
-//  else
-//  {
-//    Distance = side_sonar.ping_cm();
-//  }
+ 
+  
+Serial.print("Sensor = "); 
+Serial.print(Distance); 
+Serial.print(" Input = "); 
+Serial.print(Input); 
+Serial.print(" Output = "); 
+Serial.print(Output); 
+Serial.print(" Output = "); 
+Serial.print(2 * Setpoint - Output); 
+Serial.print("\n"); 
 
-  //      // If (C1 == 2), C2 = 0. Otherwise C2 = C1 + 1  
-      //Distance = (int(side_sonar.ping_cm()) < 1) ? 132 : side_sonar.ping_cm();
+Drive(Output, (2 * Setpoint - Output), 100);
 
-    
-    Serial.print("Sensor = "); 
-    Serial.print(Distance); 
-    Serial.print(" Input = "); 
-    Serial.print(Input); 
-    Serial.print(" Output = "); 
-    Serial.print(Output); 
-    Serial.print("\n"); 
-
-    Drive(Output, Output, 100);
-//    if (Serial.available() > 0)
-//    {
-//        for (int x = 0; x < 4; x++)
-//        { 
-//            switch (x) 
-//          { 
-//            case 0: 
-//              Kp = Serial.parseFloat(); 
-//              break; 
-//            
-//            case 1: 
-//              Ki = Serial.parseFloat(); 
-//              break; 
-//            
-//            case 2: 
-//              Kd = Serial.parseFloat(); 
-//              break; 
-//            
-//            case 3: 
-//              for (int y = Serial.available(); y == 0; y--) 
-//              { 
-//                Serial.read(); //Clear out any residual junk 
-//              } 
-//              break;
-//          }
-//       }
-//
-//      Serial.print(" Kp,Ki,Kd = "); 
-//      Serial.print(Kp); 
-//      Serial.print(","); 
-//      Serial.print(Ki); 
-//      Serial.print(","); 
-//      Serial.println(Kd); //Let us know what we just received 
-//      myPID.SetTunings(Kp, Ki, Kd); //Set the PID gain constants and start running       
-//     } 
-
-     lastMessage = now; //update the time stamp.
-//  }
 } 
 
 
