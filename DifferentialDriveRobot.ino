@@ -82,8 +82,8 @@ int maxDistance = setPoint + range;
 int minDistance = setPoint - range;
 int minSpeed = 40;
 int maxSpeed = 100;
-int minSpeed = 80;
-int maxSpeed = 140;
+//int minSpeed = 80;
+//int maxSpeed = 140;
 
 void setup()
 {
@@ -241,6 +241,29 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 //    OutputRight = 2 * Setpoint - Output;
     OutputLeft = 2 * Setpoint - Output;
     OutputRight = Output;
+
+    Drive(OutputLeft, OutputRight, 100);
+
+//    int red = map(OutputLeft, Setpoint, maxSpeed, 100, 255); 
+//    int green = map(OutputRight, Setpoint, maxSpeed, 100, 255); 
+    
+    int green = map(OutputLeft, Setpoint, maxSpeed, 100, 255); 
+    int red = map(OutputRight, Setpoint, maxSpeed, 100, 255); 
+   
+    analogWrite(RED_PIN, red); 
+    analogWrite(GREEN_PIN, green);
+
+//    if (OutputLeft > OutputRight)
+//    {
+//     digitalWrite(RED_PIN, LOW); 
+//     digitalWrite(GREEN_PIN, HIGH);   
+//    }
+//
+//    if (OutputLeft < OutputRight)
+//    {
+//     digitalWrite(GREEN_PIN, LOW); 
+//     digitalWrite(RED_PIN, HIGH);   
+//    }        
       
     Serial.print("Sensor = "); 
     Serial.print(Distance); 
@@ -250,9 +273,12 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
     Serial.print(Output); 
     Serial.print(" Output = "); 
     Serial.print(2 * Setpoint - Output); 
+      Serial.print(" red = ");
+         Serial.print(red);
+           Serial.print(" green = ");
+ Serial.print(green);
     Serial.print("\n"); 
-
-    Drive(OutputLeft, OutputRight, 100);
+   
   }
 
   void followWall()
