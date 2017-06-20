@@ -108,63 +108,25 @@ void setup()
 
 void loop() 
 {
-//followWall();
-//PID();
-//Setpoint = map(analogRead(pot), 0, 1024, 0, 255); //Read our setpoint
-//lightLevel = analogRead(photores); //Get the light level 
-Input = map(side_sonar.ping_cm(), 14, 132, 100, 255); //Change read scale to analog out scale 
-myPID.Compute(); //Run the PID loop 
-analogWrite(enA, Output); //Write out the output from the PID loop to our LED pin 
-now = millis(); //Keep track of time 
-if(now - lastMessage > serialPing)  //If it has been long enough give us some info on serial
-  {
-    // this should execute less frequently 
-    // send a message back to the mother ship 
-    Serial.print("Setpoint = "); 
-    Serial.print(Setpoint); 
-    Serial.print(" Input = "); 
-    Serial.print(Input); 
-    Serial.print(" Output = "); 
-    Serial.print(Output); 
-    Serial.print("\n"); 
-//    if (Serial.available() > 0)
-//    {
-//        for (int x = 0; x < 4; x++)
-//        { 
-//            switch (x) 
-//          { 
-//            case 0: 
-//              Kp = Serial.parseFloat(); 
-//              break; 
-//            
-//            case 1: 
-//              Ki = Serial.parseFloat(); 
-//              break; 
-//            
-//            case 2: 
-//              Kd = Serial.parseFloat(); 
-//              break; 
-//            
-//            case 3: 
-//              for (int y = Serial.available(); y == 0; y--) 
-//              { 
-//                Serial.read(); //Clear out any residual junk 
-//              } 
-//              break;
-//          }
-//       }
-//
-//      Serial.print(" Kp,Ki,Kd = "); 
-//      Serial.print(Kp); 
-//      Serial.print(","); 
-//      Serial.print(Ki); 
-//      Serial.print(","); 
-//      Serial.println(Kd); //Let us know what we just received 
-//      myPID.SetTunings(Kp, Ki, Kd); //Set the PID gain constants and start running       
-//     } 
 
-     lastMessage = now; //update the time stamp.
-  }
+WallFollowerPID();
+  
+//Input = map(side_sonar.ping_cm(), 14, 132, 100, 255); //Change read scale to analog out scale 
+//myPID.Compute(); //Run the PID loop 
+//Drive(Output, Output, 100); 
+//now = millis(); //Keep track of time 
+//
+//if(now - lastMessage > serialPing)  //If it has been long enough give us some info on serial
+//  {
+//    Serial.print("Setpoint = "); 
+//    Serial.print(Setpoint); 
+//    Serial.print(" Input = "); 
+//    Serial.print(Input); 
+//    Serial.print(" Output = "); 
+//    Serial.print(Output); 
+//    Serial.print("\n");
+//    lastMessage = now; //update the time stamp.
+//  }
 } 
 
 
@@ -324,5 +286,25 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
       analogWrite(GREEN_PIN, 255);  
     }
     
+  }
+
+  void WallFollowerPID()
+  {
+    Input = map(side_sonar.ping_cm(), 14, 132, 100, 255); //Change read scale to analog out scale 
+    myPID.Compute(); //Run the PID loop 
+    Drive(Output, Output, 100); 
+    now = millis(); //Keep track of time 
+    
+    if(now - lastMessage > serialPing)  //If it has been long enough give us some info on serial
+      {
+        Serial.print("Setpoint = "); 
+        Serial.print(Setpoint); 
+        Serial.print(" Input = "); 
+        Serial.print(Input); 
+        Serial.print(" Output = "); 
+        Serial.print(Output); 
+        Serial.print("\n");
+        lastMessage = now; //update the time stamp.
+      }
   }
 
