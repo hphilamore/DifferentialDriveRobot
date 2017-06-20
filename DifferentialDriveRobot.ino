@@ -45,7 +45,7 @@ float Kp=1; //Initial Proportional Gain
 float Ki=0; //Initial Integral Gain 
 float Kd=0; //Initial Differential Gain
 
-double Setpoint, Input, Output;    
+double Setpoint, Input, Output, OutputLeft, OutputRight;  
 
 NewPing side_sonar(TRIGGER_PIN_SIDE, ECHO_PIN_SIDE, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
@@ -53,9 +53,6 @@ NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);    
                                                             
 const int sampleRate = 1;       // Variable that determines how fast our PID loop runs
-//const long serialPing = 500;    //This determines how often we ping our loop  
-//long now = 0;                   //This variable is used to keep track of time 
-//unsigned long lastMessage = 0;  //This keeps track of when our loop last spoke to serial // last message timestamp.
 
 // the number of pulses on the encoder wheel
 float EnRes = 10;
@@ -80,25 +77,20 @@ unsigned long timer = 0;
 float T;    
 
 int setPoint = 35;
-
 int range = 15;
-
-//int minDistance = 2;
-//int maxDistance = 50;
-
 int maxDistance = setPoint + range;
 int minDistance = setPoint - range;
-
-
-int minSpeed = 100;
-int maxSpeed = 255;
+int minSpeed = 40;
+int maxSpeed = 100;
+int minSpeed = 80;
+int maxSpeed = 140;
 
 void setup()
 {
    
    Serial.begin(9600);
    
-  //Interrupt 0 is digital pin 2,Interrupt 1 is digital pin 3. 
+    //Interrupt 0 is digital pin 2,Interrupt 1 is digital pin 3. 
     attachInterrupt(LEFT, LwheelSpeed, FALLING);    //init the interrupt mode for the digital pin 2
     attachInterrupt(RIGHT, RwheelSpeed, FALLING);   //init the interrupt mode for the digital pin 3
    
@@ -117,38 +109,15 @@ void setup()
     myPID.SetSampleTime(sampleRate); //Sets the sample rate
     myPID.SetOutputLimits(minSpeed, maxSpeed);
 
-    Serial.print(minDistance);
-Serial.print("\t");
-Serial.println(maxDistance);
-
     Serial.print("Setpoint = "); 
     Serial.print(Setpoint);
-    Serial.print("\n"); 
-
-   // lastMessage = millis(); // timestamp
-    
+    Serial.print("\n");    
 }
 
 void loop() 
 {
 
-int D = side_sonar.ping_cm(); 
-Distance = (D < 1) ? 132 : D;
-Input = map(Distance, minDistance, maxDistance, minSpeed, maxSpeed); //Change read scale to analog out scale 
-myPID.Compute(); //Run the PID loop 
- 
-  
-Serial.print("Sensor = "); 
-Serial.print(Distance); 
-Serial.print(" Input = "); 
-Serial.print(Input); 
-Serial.print(" Output = "); 
-Serial.print(Output); 
-Serial.print(" Output = "); 
-Serial.print(2 * Setpoint - Output); 
-Serial.print("\n"); 
-
-Drive(Output, (2 * Setpoint - Output), 100);
+  FollowWallPID();
 
 } 
 
@@ -258,6 +227,32 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
         
         timer = millis();
     }    
+  }
+
+
+  void FollowWallPID()
+  {
+
+    int D = side_sonar.ping_cm(); 
+    Distance = (D < 1) ? 132 : D;
+    Input = map(Distance, minDistance, maxDistance, minSpeed, maxSpeed); 
+    myPID.Compute();  
+//    OutputLeft = Output;
+//    OutputRight = 2 * Setpoint - Output;
+    OutputLeft = 2 * Setpoint - Output;
+    OutputRight = Output;
+      
+    Serial.print("Sensor = "); 
+    Serial.print(Distance); 
+    Serial.print(" Input = "); 
+    Serial.print(Input); 
+    Serial.print(" Output = "); 
+    Serial.print(Output); 
+    Serial.print(" Output = "); 
+    Serial.print(2 * Setpoint - Output); 
+    Serial.print("\n"); 
+
+    Drive(OutputLeft, OutputRight, 100);
   }
 
   void followWall()
