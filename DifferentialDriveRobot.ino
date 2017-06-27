@@ -17,13 +17,24 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 #define LEFT 0
 #define RIGHT 1
 
-#define TRIGGER_PIN_SIDE  12//3  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define TRIGGER_PIN_SIDE  12//13  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define ECHO_PIN_SIDE     12  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define TRIGGER_PIN_FRONT  8  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define ECHO_PIN_FRONT     8//4  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
 #define RED_PIN  A0  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define GREEN_PIN  A1  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define IRRight 13
+#define IRLeft 4
+
+#define TURN_LEFT 0
+#define TURN_RIGHT 1
+#define CHECK_LINE 2
+#define GO_STRAIGHT 3
+
+#define WHITE 0
+#define BLACK 1
+
 
 // encoder variables
 float coder[2] = {0,0};
@@ -46,6 +57,8 @@ float Ki=0; //Initial Integral Gain
 float Kd=0; //Initial Differential Gain
 
 double Setpoint, Input, Output, OutputLeft, OutputRight;  
+
+int mode;
 
 NewPing side_sonar(TRIGGER_PIN_SIDE, ECHO_PIN_SIDE, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
@@ -85,6 +98,9 @@ int maxSpeed = 100;
 //int minSpeed = 80;
 //int maxSpeed = 140;
 
+int speedLow = 80;
+int speedHigh = 120;//100;
+
 void setup()
 {
    
@@ -100,6 +116,9 @@ void setup()
     pinMode(enB, OUTPUT);
     pinMode(in3, OUTPUT);
     pinMode(in4, OUTPUT);
+
+    pinMode(IRLeft, INPUT);
+    pinMode(IRRight, INPUT);
     
     pinMode(RED_PIN, OUTPUT);
     pinMode(GREEN_PIN, OUTPUT);
@@ -117,28 +136,56 @@ void setup()
 void loop() 
 {
 
-  FollowWallPID();
+
+
+//  Sense();
+
+  Serial.print(digitalRead(IRLeft));
+  Serial.print('\t');
+  Serial.print(digitalRead(IRRight));
+  Serial.print('\n');
+
+//  switch (mode)
+//  {
+//    case TURN_LEFT:
+//       turn_left();  
+//       break;
+//       
+//    case TURN_RIGHT:
+//      turn_right(); 
+//       break;
+//       
+//    case GO_STRAIGHT:
+//       drive_straight(); 
+//       break; 
+//       
+//    case CHECK_LINE:
+//       check_line();
+//       break;
+//  }
+
+  //  FollowWallPID();
 
 } 
 
-
+//-------------------------------------------------------------------------------------------
   void LwheelSpeed()
 {
   coder[LEFT] ++;  //count the left wheel encoder interrupts
 }
 
+//-------------------------------------------------------------------------------------------
 
 void RwheelSpeed()
 {
   coder[RIGHT] ++; //count the right wheel encoder interrupts
 }
 
+//-------------------------------------------------------------------------------------------
+
 void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod) 
 
-  {  
-
-
-    
+  {      
      // set motor direction
     if(leftMotorSpeed < 0) 
     {
@@ -185,7 +232,8 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
      }
 
     }
- 
+    
+//------------------------------------------------------------------------------------------- 
  
  void tachometer(float leftMotorSpeed, float rightMotorSpeed)
  {
@@ -237,10 +285,7 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
     OutputRight = Output;
 
     Drive(OutputLeft, OutputRight, 100);
-
-//    int red = map(OutputLeft, Setpoint, maxSpeed, 100, 255); 
-//    int green = map(OutputRight, Setpoint, maxSpeed, 100, 255); 
-    
+   
     int green = map(OutputLeft, Setpoint, maxSpeed, 100, 255); 
     int red = map(OutputRight, Setpoint, maxSpeed, 100, 255);    
     analogWrite(RED_PIN, red); 
@@ -266,62 +311,99 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
     Serial.print(Output); 
     Serial.print(" Output = "); 
     Serial.print(2 * Setpoint - Output); 
-    Serial.print(" red = ");
-    Serial.print(red);
-    Serial.print(" green = ");
-    Serial.print(green);
     Serial.print("\n"); 
    
   }
 
-  void followWall()
+  //-------------------------------------------------------------------------------------------
+
+  
+  void Sense()
   {
 
-    delay(50);
+  if ((digitalRead(IRLeft) == WHITE) && digitalRead(IRRight) == BLACK)
   
-    if((front_sonar.ping_cm() < DistanceFromObstacle)&&(front_sonar.ping_cm() > 0))
-    {        
-      //Drive(0,255,100);
-      Drive(-100,100,300);   
-      digitalWrite(GREEN_PIN, HIGH); 
-      digitalWrite(RED_PIN, HIGH); 
+    {
+     //Drive(?, ?, ?);  
+     mode = TURN_LEFT;
     }  
+
+  else if ((digitalRead(IRLeft) == BLACK) && digitalRead(IRRight) == WHITE)
+   
+    { 
+     //Drive(?, ?, ?);  
+     mode = TURN_RIGHT;
+    }  
+
+  else if ((digitalRead(IRLeft) == BLACK) && digitalRead(IRRight) == BLACK)
   
-    else if((side_sonar.ping_cm() < VeryClose)&& (side_sonar.ping_cm() > 0))
-    {    
-      Drive(60,120,10);     
-      analogWrite(GREEN_PIN, 0); 
-      analogWrite(RED_PIN, 255);  
+    {        
+      //Drive(?, ?, ?);  
+     mode = CHECK_LINE;
     }
-    
-   else if((side_sonar.ping_cm() < Close)&& (side_sonar.ping_cm() > VeryClose))
-    {    
-      Drive(80,100,10);     
-      analogWrite(GREEN_PIN, 0); 
-      analogWrite(RED_PIN, 50);  
-    }
-    
-   else if((side_sonar.ping_cm() < Far)&& (side_sonar.ping_cm() > Close))
-    {    
-      Drive(90,90,10);     
-      analogWrite(GREEN_PIN, 0); 
-      analogWrite(RED_PIN, 0);  
-    }
-    
-   else if((side_sonar.ping_cm() < VeryFar)&& (side_sonar.ping_cm() > Far))
-    {    
-      Drive(100,80,10);     
-      analogWrite(RED_PIN, 0); 
-      analogWrite(GREEN_PIN, 50);  
-    }
-  
-    
-    else //if(side_sonar.ping_cm() > VeryFar)
-    {    
-      Drive(120,60,10);     
-      analogWrite(RED_PIN, 0); 
-      analogWrite(GREEN_PIN, 255);  
-    }
-    
+
+  else
+
+  {
+    mode = GO_STRAIGHT;
   }
+Serial.print("mode ");
+  Serial.println(mode);
+  
+ }
+
+ //-------------------------------------------------------------------------------------------
+
+ void drive_straight()
+ {
+  Drive(speedHigh, speedHigh, 10); 
+  analogWrite(RED_PIN, 0); 
+  analogWrite(GREEN_PIN, 0);
+ }
+
+ //-------------------------------------------------------------------------------------------
+
+ void turn_left()
+ {
+  Drive(speedLow, speedHigh, 10); 
+  analogWrite(RED_PIN, 0); 
+  analogWrite(GREEN_PIN, 255);
+ }
+
+ //-------------------------------------------------------------------------------------------
+
+ void turn_right()
+ {
+  Drive(speedHigh, speedLow, 10); 
+  analogWrite(RED_PIN, 255); 
+  analogWrite(GREEN_PIN, 0);
+ }
+
+ //-------------------------------------------------------------------------------------------
+ 
+ void check_line()
+ {
+  Drive(speedLow, speedLow, 500);
+  analogWrite(RED_PIN, 255); 
+  analogWrite(GREEN_PIN, 255);
+  if ((digitalRead(IRLeft) == BLACK) && digitalRead(IRRight) == BLACK)
+  
+    {
+      turn_around();
+    }
+   else
+   
+   {
+     drive_straight();
+   }
+ }
+ 
+ //-------------------------------------------------------------------------------------------
+
+ void turn_around()
+ {
+  Drive(speedLow, -speedLow, 3000);
+ }
+  
+  
 
