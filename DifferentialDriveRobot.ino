@@ -17,13 +17,13 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 #define LEFT 0
 #define RIGHT 1
 
-#define TRIGGER_PIN_SIDE  12//13  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define TRIGGER_PIN_SIDE  12  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define ECHO_PIN_SIDE     12  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define TRIGGER_PIN_FRONT  8  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-#define ECHO_PIN_FRONT     8//4  // Arduino pin tied to echo pin on the ultrasonic sensor.
-#define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
-#define RED_PIN  A0  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-#define GREEN_PIN  A1  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define ECHO_PIN_FRONT     8  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define MAX_DISTANCE 200      // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
+#define RED_PIN  A0           // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define GREEN_PIN  A1         // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define IRRight 13
 #define IRLeft 4
 
@@ -31,6 +31,7 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 #define TURN_RIGHT 1
 #define CHECK_LINE 2
 #define GO_STRAIGHT 3
+#define FRONT_OBSTACLE 4
 
 #define WHITE 0
 #define BLACK 1
@@ -44,12 +45,6 @@ float radps[2] = {0,0};
 const float pi = 3.142;
 const float DistanceFromWall = 15;
 const float DistanceFromObstacle = 17;
-
-// bang-bang control parameters
-const float VeryClose = 14;
-const float Close = 20;
-const float Far = 26;
-const float VeryFar = 32;
 
 // PID Tuning parameters
 float Kp=1; //Initial Proportional Gain 
@@ -138,31 +133,36 @@ void loop()
 
 
 
-//  Sense();
+  Sense();
 
   Serial.print(digitalRead(IRLeft));
   Serial.print('\t');
   Serial.print(digitalRead(IRRight));
   Serial.print('\n');
 
-//  switch (mode)
-//  {
-//    case TURN_LEFT:
-//       turn_left();  
-//       break;
-//       
-//    case TURN_RIGHT:
-//      turn_right(); 
-//       break;
-//       
-//    case GO_STRAIGHT:
-//       drive_straight(); 
-//       break; 
-//       
-//    case CHECK_LINE:
-//       check_line();
-//       break;
-//  }
+  switch (mode)
+  {
+       
+    case TURN_RIGHT:
+      turn_right(); 
+       break;
+
+    case TURN_LEFT:
+       turn_left();  
+       break;
+       
+    case GO_STRAIGHT:
+       drive_straight(); 
+       break; 
+       
+    case CHECK_LINE:
+       check_line();
+       break;
+
+    case FRONT_OBSTACLE:
+       front_obstacle();
+       break;
+  }
 
   //  FollowWallPID();
 
@@ -262,7 +262,8 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
         timer = millis();
     }    
   }
-
+  
+//------------------------------------------------------------------------------------------- 
 
   void FollowWallPID()
   {
@@ -320,19 +321,25 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
   
   void Sense()
   {
+    
+  if ((front_sonar.ping_cm() < DistanceFromObstacle) &&(front_sonar.ping_cm() > 0))
+  
+    { 
+     mode = FRONT_OBSTACLE;
+    }
 
-  if ((digitalRead(IRLeft) == WHITE) && digitalRead(IRRight) == BLACK)
+  else if ((digitalRead(IRLeft) == WHITE) && digitalRead(IRRight) == BLACK)
   
     {
      //Drive(?, ?, ?);  
-     mode = TURN_LEFT;
+     mode = TURN_RIGHT;
     }  
 
   else if ((digitalRead(IRLeft) == BLACK) && digitalRead(IRRight) == WHITE)
    
     { 
      //Drive(?, ?, ?);  
-     mode = TURN_RIGHT;
+     mode = TURN_LEFT;
     }  
 
   else if ((digitalRead(IRLeft) == BLACK) && digitalRead(IRRight) == BLACK)
@@ -347,8 +354,6 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
   {
     mode = GO_STRAIGHT;
   }
-Serial.print("mode ");
-  Serial.println(mode);
   
  }
 
@@ -403,6 +408,15 @@ Serial.print("mode ");
  void turn_around()
  {
   Drive(speedLow, -speedLow, 3000);
+ }
+
+ //-------------------------------------------------------------------------------------------
+
+ void front_obstacle()
+ {
+  Drive(0, 0, 2000);
+  analogWrite(RED_PIN, 255); 
+  analogWrite(GREEN_PIN, 255);
  }
   
   
