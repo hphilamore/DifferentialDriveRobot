@@ -31,6 +31,7 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 #define TURN_RIGHT 1
 #define CHECK_LINE 2
 #define GO_STRAIGHT 3
+#define FRONT_OBSTACLE 4
 
 #define WHITE 0
 #define BLACK 1
@@ -89,6 +90,8 @@ int maxDistance = setPoint + range;
 int minDistance = setPoint - range;
 int minSpeed = 40;
 int maxSpeed = 100;
+//int minSpeed = 80;
+//int maxSpeed = 140;
 
 int speedLow = 80;
 int speedHigh = 120;//100;
@@ -128,6 +131,8 @@ void setup()
 void loop() 
 {
 
+
+
   Sense();
 
   Serial.print(digitalRead(IRLeft));
@@ -149,8 +154,17 @@ void loop()
     case GO_STRAIGHT:
        drive_straight(); 
        break; 
+       
+    case CHECK_LINE:
+       check_line();
+       break;
 
+    case FRONT_OBSTACLE:
+       front_obstacle();
+       break;
   }
+
+  //  FollowWallPID();
 
 } 
 
@@ -231,7 +245,17 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 
         radps[LEFT] = 2*pi*1000*float(coder[LEFT])/(EnRes * T); 
         radps[RIGHT] = 2*pi*1000*float(coder[RIGHT])/(EnRes * T);
-          
+
+//        Serial.print(leftMotorSpeed);
+//        Serial.print("\t");        
+////      Serial.print(rps[LEFT]);   
+//        Serial.print(radps[LEFT]);         
+//        Serial.print("\t");
+//        Serial.print(rightMotorSpeed);
+//        Serial.print("\t");
+////      Serial.println(rps[RIGHT]);
+//        Serial.println(radps[RIGHT]);     
+        
         coder[LEFT] = 0;                 //clear the data buffer
         coder[RIGHT] = 0;       
         
@@ -291,7 +315,13 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
   void Sense()
   {
     
-  if ((digitalRead(IRLeft) == WHITE) && digitalRead(IRRight) == BLACK)
+  if ((front_sonar.ping_cm() < DistanceFromObstacle) &&(front_sonar.ping_cm() > 0))
+  
+    { 
+     mode = FRONT_OBSTACLE;
+    }
+
+  else if ((digitalRead(IRLeft) == WHITE) && digitalRead(IRRight) == BLACK)
   
     {
      //Drive(?, ?, ?);  
@@ -375,7 +405,12 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
 
  //-------------------------------------------------------------------------------------------
 
- 
+ void front_obstacle()
+ {
+  Drive(0, 0, 2000);
+  analogWrite(RED_PIN, 255); 
+  analogWrite(GREEN_PIN, 255);
+ }
   
   
 
