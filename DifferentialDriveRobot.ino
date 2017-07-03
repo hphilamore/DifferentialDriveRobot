@@ -14,33 +14,29 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 #include <NewPing.h>
 #include <PID_v1.h>
 
+// define variables
 #define LEFT 0
 #define RIGHT 1
-
-#define TRIGGER_PIN_SIDE  12  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-#define ECHO_PIN_SIDE     12  // Arduino pin tied to echo pin on the ultrasonic sensor.
-#define TRIGGER_PIN_FRONT  8  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-#define ECHO_PIN_FRONT     8  // Arduino pin tied to echo pin on the ultrasonic sensor.
-#define MAX_DISTANCE 200      // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
-#define RED_PIN  A0           // Arduino pin tied to trigger pin on the ultrasonic sensor.
-#define GREEN_PIN  A1         // Arduino pin tied to echo pin on the ultrasonic sensor.
-#define IRRight 13
-#define IRLeft 4
-
+#define WHITE 0
+#define BLACK 1
 #define TURN_LEFT 0
 #define TURN_RIGHT 1
 #define CHECK_LINE 2
 #define GO_STRAIGHT 3
 #define FRONT_OBSTACLE 4
+#define MAX_DISTANCE 200      // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
 
-#define WHITE 0
-#define BLACK 1
+// define pin numbers
+#define TRIGGER_PIN_SIDE  12  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN_SIDE     12  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define TRIGGER_PIN_FRONT  8  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN_FRONT     8  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define RED_PIN           A0 
+#define GREEN_PIN         A1 
+#define IRRight           13
+#define IRLeft             4
 
-// encoder variables
-float coder[2] = {0,0};
-float rps[2] = {0,0};
-float radps[2] = {0,0};
-
+// object avoidance parameters
 const float pi = 3.142;
 const float DistanceFromWall = 15;
 const float DistanceFromObstacle = 17;
@@ -50,16 +46,24 @@ float Kp=1; //Initial Proportional Gain
 float Ki=0; //Initial Integral Gain 
 float Kd=0; //Initial Differential Gain
 
-double Setpoint, Input, Output, OutputLeft, OutputRight;  
+// PID controller varables
+double Setpoint, Input, Output, OutputLeft, OutputRight; 
+//const int sampleRate = 1;       // Variable that determines how fast our PID loop runs
 
+// encoder variables
+float coder[2] = {0,0};
+float rps[2] = {0,0};
+float radps[2] = {0,0}; 
+
+// switch case variable
 int mode;
 
+// untrasonic sensor 
 NewPing side_sonar(TRIGGER_PIN_SIDE, ECHO_PIN_SIDE, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 NewPing front_sonar(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 
+// PID controller
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);    
-                                                            
-const int sampleRate = 1;       // Variable that determines how fast our PID loop runs
 
 // the number of pulses on the encoder wheel
 float EnRes = 10;
@@ -68,33 +72,31 @@ float EnRes = 10;
 int enA = 5;
 int in1 = 7;
 int in2 = 6;
+
 // motor two
 int enB = 9;
 int in3 = 11;
 int in4 = 10;
 
-
-int Distance;
-
-// the time (in mS) increment to record the encoder output for before outputting to serial 
-int TachoIncrement = 500;
-
-long DrivePeriod;
-unsigned long DriveStartTime;
-unsigned long timer = 0;               
-float T;    
-
+// PID controller
 int setPoint = 35;
 int range = 15;
 int maxDistance = setPoint + range;
 int minDistance = setPoint - range;
 int minSpeed = 40;
 int maxSpeed = 100;
-//int minSpeed = 80;
-//int maxSpeed = 140;
+int Distance;
 
+// Line follower
 int speedLow = 80;
-int speedHigh = 120;//100;
+int speedHigh = 120;
+
+// Tachometer
+int TachoIncrement = 500;   // the time (in mS) increment to record the encoder output for before outputting to serial 
+long DrivePeriod;
+unsigned long DriveStartTime;
+unsigned long timer = 0;               
+float T;    
 
 void setup()
 {
@@ -111,16 +113,14 @@ void setup()
     pinMode(enB, OUTPUT);
     pinMode(in3, OUTPUT);
     pinMode(in4, OUTPUT);
-
     pinMode(IRLeft, INPUT);
-    pinMode(IRRight, INPUT);
-    
+    pinMode(IRRight, INPUT);    
     pinMode(RED_PIN, OUTPUT);
     pinMode(GREEN_PIN, OUTPUT);
     
     Setpoint = map(setPoint, minDistance, maxDistance, minSpeed, maxSpeed);
     myPID.SetMode(AUTOMATIC); //Turn on the PID loop 
-    myPID.SetSampleTime(sampleRate); //Sets the sample rate
+    //myPID.SetSampleTime(sampleRate); //Sets the sample rate
     myPID.SetOutputLimits(minSpeed, maxSpeed);
 
     Serial.print("Setpoint = "); 
@@ -130,8 +130,6 @@ void setup()
 
 void loop() 
 {
-
-
 
   Sense();
 
@@ -215,13 +213,14 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
       digitalWrite(in4, HIGH);
     }
   
-    DriveStartTime = millis() ;   
+    DriveStartTime = millis();   
             
     while ((millis() - DriveStartTime) < DrivePeriod)         
     {        
       analogWrite(enA, leftMotorSpeed);
       analogWrite(enB, rightMotorSpeed); 
-      tachometer(leftMotorSpeed, rightMotorSpeed);  
+      
+      //tachometer(leftMotorSpeed, rightMotorSpeed);  
       //sonar();
 
 //        Serial.print(side_sonar.ping_cm());
@@ -381,9 +380,12 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
  
  void check_line()
  {
+  // move forward by one step 
   Drive(speedLow, speedLow, 500);
   analogWrite(RED_PIN, 255); 
   analogWrite(GREEN_PIN, 255);
+
+  // check line again
   if ((digitalRead(IRLeft) == BLACK) && digitalRead(IRRight) == BLACK)
   
     {
