@@ -36,7 +36,6 @@ www.instructables.com/id/Arduino-Based-Optical-Tachometer/
 #define WHITE 0
 #define BLACK 1
 
-
 // encoder variables
 float coder[2] = {0,0};
 float rps[2] = {0,0};
@@ -73,6 +72,7 @@ int in2 = 6;
 int enB = 9;
 int in3 = 11;
 int in4 = 10;
+
 
 int Distance;
 
@@ -277,32 +277,25 @@ void Drive(int leftMotorSpeed, int rightMotorSpeed, long DrivePeriod)
     }  
 
     int D = side_sonar.ping_cm(); 
-    Distance = (D < 1) ? 132 : D;
+    Distance = (D < 1) ? maxDistance : D;
     Input = map(Distance, minDistance, maxDistance, minSpeed, maxSpeed); 
     myPID.Compute();  
-//    OutputLeft = Output;
-//    OutputRight = 2 * Setpoint - Output;
     OutputLeft = 2 * Setpoint - Output;
     OutputRight = Output;
 
     Drive(OutputLeft, OutputRight, 100);
-   
-    int green = map(OutputLeft, Setpoint, maxSpeed, 100, 255); 
-    int red = map(OutputRight, Setpoint, maxSpeed, 100, 255);    
-    analogWrite(RED_PIN, red); 
-    analogWrite(GREEN_PIN, green);
 
-//    if (OutputLeft > OutputRight)
-//    {
-//     digitalWrite(RED_PIN, LOW); 
-//     digitalWrite(GREEN_PIN, HIGH);   
-//    }
-//
-//    if (OutputLeft < OutputRight)
-//    {
-//     digitalWrite(GREEN_PIN, LOW); 
-//     digitalWrite(RED_PIN, HIGH);   
-//    }        
+    if (OutputLeft > OutputRight)
+    {
+     digitalWrite(RED_PIN, LOW); 
+     digitalWrite(GREEN_PIN, HIGH);   
+    }
+
+    if (OutputLeft < OutputRight)
+    {
+     digitalWrite(GREEN_PIN, LOW); 
+     digitalWrite(RED_PIN, HIGH);   
+    }        
       
     Serial.print("Sensor = "); 
     Serial.print(Distance); 
